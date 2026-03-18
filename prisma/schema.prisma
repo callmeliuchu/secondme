@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -17,16 +17,22 @@ model User {
   accessToken     String    @map("access_token")
   refreshToken    String    @map("refresh_token")
   tokenExpiresAt  DateTime  @map("token_expires_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   // 用户信息（profile 模块）
   nickname        String?
   avatar          String?
   bio             String?
 
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
   // 会话（chat 模块）
   sessions        Session[]
+
+  // 辩论（debate 模块）
+  debates         Debate[]
+  debateComments  DebateComment[]
+  debateParticipations DebateParticipant[]
 
   @@map("users")
 }
@@ -66,10 +72,11 @@ model Debate {
   positivePersona String    @map("positive_persona")
   negativePersona String    @map("negative_persona")
   createdBy       String    @map("created_by")
+  creator         User      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
   roundCount      Int       @default(0) @map("round_count")
   endedAt         DateTime? @map("ended_at")
   endedBy         String?   @map("ended_by")
-  createdAt      DateTime  @default(now()) @map("created_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   messages      DebateMessage[]
@@ -112,6 +119,7 @@ model DebateComment {
   debateId  String   @map("debate_id")
   debate    Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
   userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   content   String
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -124,6 +132,7 @@ model DebateParticipant {
   debateId  String   @map("debate_id")
   debate    Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
   userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   role      String   @default("audience")
   joinedAt  DateTime @default(now()) @map("joined_at")
 
