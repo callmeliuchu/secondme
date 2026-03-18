@@ -405,6 +405,9 @@ export async function GET(
       let currentRound = debate.roundCount || 0
       let currentSide: 'positive' | 'negative' = 'positive'
 
+      // 获取最新的 debate 数据（包含 persona）
+      let currentDebate = await getDebateById(id)
+
       while (currentRound < MAX_ROUNDS) {
         // 检查辩论是否结束
         const updatedDebate = await getDebateById(id)
@@ -418,7 +421,7 @@ export async function GET(
         await updateDebate(id, { roundCount: currentRound })
 
         // 调用 SecondMe API 获取回复
-        const persona = currentSide === 'positive' ? debate.positivePersona : debate.negativePersona
+        const persona = currentSide === 'positive' ? currentDebate.positivePersona : currentDebate.negativePersona
 
         try {
           const response = await fetch(
@@ -463,9 +466,8 @@ export async function GET(
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'AI 响应出错' })}\n\n`))
         }
 
-        // 切换到另一方
+        // 切换到另一方，准备下一轮
         currentSide = currentSide === 'positive' ? 'negative' : 'positive'
-        currentRound++
       }
 
       controller.close()
