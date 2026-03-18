@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -56,4 +56,77 @@ model Message {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("messages")
+}
+
+// 辩论模型（debate 模块）
+model Debate {
+  id              String    @id @default(cuid())
+  topic           String
+  status          String    @default("pending") // pending/running/ended
+  positivePersona String    @map("positive_persona")
+  negativePersona String    @map("negative_persona")
+  createdBy       String    @map("created_by")
+  roundCount      Int       @default(0) @map("round_count")
+  endedAt         DateTime? @map("ended_at")
+  endedBy         String?   @map("ended_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  messages      DebateMessage[]
+  votes        DebateVote[]
+  comments     DebateComment[]
+  participants DebateParticipant[]
+
+  @@map("debates")
+}
+
+// 辩论消息模型（debate 模块）
+model DebateMessage {
+  id         String   @id @default(cuid())
+  debateId   String   @map("debate_id")
+  debate     Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  role       String   // positive/negative/user
+  content    String
+  tokensUsed Int?     @map("tokens_used")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("debate_messages")
+}
+
+// 辩论投票模型（debate 模块）
+model DebateVote {
+  id        String   @id @default(cuid())
+  debateId  String   @map("debate_id")
+  debate    Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  voterId   String   @map("voter_id")
+  side      String   // positive/negative
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([debateId, voterId])
+  @@map("debate_votes")
+}
+
+// 辩论评论模型（debate 模块）
+model DebateComment {
+  id        String   @id @default(cuid())
+  debateId  String   @map("debate_id")
+  debate    Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("debate_comments")
+}
+
+// 辩论参与者模型（debate 模块）
+model DebateParticipant {
+  id        String   @id @default(cuid())
+  debateId  String   @map("debate_id")
+  debate    Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  role      String   @default("audience")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  @@unique([debateId, userId])
+  @@map("debate_participants")
 }
