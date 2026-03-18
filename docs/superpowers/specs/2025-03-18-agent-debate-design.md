@@ -21,10 +21,13 @@
 | 发起辩论 | 用户输入话题，创建一场辩论 | P0 |
 | 自动分配人格 | 根据话题，AI 自动生成两个对立人格的 Agent | P0 |
 | 实时辩论 | 两个 Agent 实时轮流发言，展示在界面上 | P0 |
-| 围观模式 | 其他用户可以加入围观辩论 | P1 |
-| 用户发言 | 用户可以随时插入自己的观点 | P1 |
-| 投票功能 | 用户可以为正方或反方投票 | P1 |
+| 围观模式 | 其他用户可以加入围观，显示在线人数 | P1 |
+| 用户发言 | 用户作为"场外观众"插入观点，不打断辩论流程 | P1 |
+| 投票功能 | 用户可以为正方或反方投票，实时显示票数 | P1 |
 | 结束点评 | 辩论结束后，用户可以发表点评 | P1 |
+| 辩论列表 | 热门辩论列表，支持分页 | P2 |
+| 我的历史 | 用户创建的辩论历史 | P2 |
+| 超时结束 | 辩论 N 轮后自动结束 | P2 |
 
 ### 3.2 用户流程
 
@@ -65,6 +68,9 @@ Debate (辩论场)
 ├── positivePersona (正方人格描述)
 ├── negativePersona (反方人格描述)
 ├── createdBy (创建者)
+├── roundCount (辩论轮数)
+├── endedAt (结束时间)
+├── endedBy (结束者)
 └── createdAt
 
 DebateMessage (辩论消息)
@@ -72,9 +78,10 @@ DebateMessage (辩论消息)
 ├── debateId
 ├── role (positive/negative/user)
 ├── content
+├── tokensUsed (Token消耗)
 └── createdAt
 
-DebateVote (投票)
+DebateVote (投票) - 唯一约束: [debateId, voterId]
 ├── id
 ├── debateId
 ├── voterId
@@ -87,15 +94,26 @@ DebateComment (点评)
 ├── userId
 ├── content
 └── createdAt
+
+DebateParticipant (围观者)
+├── id
+├── debateId
+├── userId
+├── joinedAt
+└── role (audience)
 ```
 
 ### 4.3 API 设计
 
 | 端点 | 方法 | 描述 |
 |------|------|------|
+| `/api/debates` | GET | 获取辩论列表（支持分页） |
+| `/api/debates/popular` | GET | 获取热门辩论 |
 | `/api/debate` | POST | 创建辩论 |
 | `/api/debate/[id]` | GET | 获取辩论详情和消息 |
-| `/api/debate/[id]/message` | POST | 用户发送消息 |
+| `/api/debate/[id]/join` | POST | 围观者加入 |
+| `/api/debate/[id]/stream` | GET | SSE 流式获取辩论消息 |
+| `/api/debate/[id]/message` | POST | 用户发送消息（场外观众） |
 | `/api/debate/[id]/vote` | POST | 投票 |
 | `/api/debate/[id]/end` | POST | 结束辩论 |
 | `/api/debate/[id]/comment` | POST | 发送点评 |
