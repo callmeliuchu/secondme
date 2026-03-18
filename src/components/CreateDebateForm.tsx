@@ -1,12 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-interface CreateDebateFormProps {
-  onSuccess?: (debateId: string) => void
-}
-
-export function CreateDebateForm({ onSuccess }: CreateDebateFormProps) {
+export default function CreateDebateForm() {
+  const router = useRouter()
   const [topic, setTopic] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +31,7 @@ export function CreateDebateForm({ onSuccess }: CreateDebateFormProps) {
 
       if (result.code === 0) {
         setTopic('')
-        onSuccess?.(result.data.id)
+        router.push(`/debate/${result.data.id}`)
       } else {
         setError(result.message || '创建失败')
       }

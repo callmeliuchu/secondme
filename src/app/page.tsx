@@ -1,10 +1,8 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import LoginButton from '@/components/LoginButton'
-import UserProfile from '@/components/UserProfile'
 import { DebateList } from '@/components/DebateList'
-import { CreateDebateForm } from '@/components/CreateDebateForm'
+import CreateDebateForm from '@/components/CreateDebateForm'
 
 async function getUserId() {
   const cookieStore = await cookies()
@@ -48,11 +46,6 @@ export default async function Home() {
 
       {/* 主内容 */}
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* 用户资料 */}
-        <div className="mb-8">
-          <UserProfile />
-        </div>
-
         <div className="grid gap-8 lg:grid-cols-2">
           {/* 发起辩论 */}
           <div>

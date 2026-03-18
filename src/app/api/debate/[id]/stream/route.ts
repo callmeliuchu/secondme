@@ -14,12 +14,20 @@ export async function GET(
     return new Response('辩论不存在', { status: 404 })
   }
 
+  // 获取当前用户（用于调用 SecondMe API）
+  const user = await getCurrentUser()
+  if (!user?.accessToken) {
+    return new Response('未登录或 token 失效', { status: 401 })
+  }
+
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
     async start(controller) {
+      let currentDebate = debate
+
       // 如果是 pending 状态，先生成人格并开始辩论
-      if (debate.status === 'pending') {
-        const personas = generatePersonas(debate.topic)
+      if (currentDebate.status === 'pending') {
+        const personas = generatePersonas(currentDebate.topic)
 
         // 更新辩论场状态为人格
         await updateDebate(id, {
@@ -32,15 +40,28 @@ export async function GET(
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ type: 'persona', side: 'positive', content: personas.positive.slice(0, 100) + '...' })}\n\n`)
         )
+
+        // 重新获取更新后的辩论数据
+        currentDebate = await getDebateById(id) || currentDebate
+      }
+
+      // 如果已经是 ended 状态，直接返回
+      if (currentDebate.status === 'ended') {
+        controller.enqueue(encoder.encode('data: {"type":"end"}\n\n'))
+        controller.close()
+        return
       }
 
       // 开始辩论循环 - 正方先发言
       const MAX_ROUNDS = 10 // 最大辩论轮次
-      let currentRound = debate.roundCount || 0
+      let currentRound = currentDebate.roundCount || 0
       let currentSide: 'positive' | 'negative' = 'positive'
 
-      // 获取最新的 debate 数据（包含 persona）
-      let currentDebate = await getDebateById(id)
+      // 如果已经有消息，下一方应该是最后一条消息的反方
+      if (currentDebate.messages && currentDebate.messages.length > 0) {
+        const lastMessage = currentDebate.messages[currentDebate.messages.length - 1]
+        currentSide = lastMessage.role === 'positive' ? 'negative' : 'positive'
+      }
 
       while (currentRound < MAX_ROUNDS) {
         // 检查辩论是否结束
@@ -63,26 +84,25 @@ export async function GET(
         }
 
         try {
-          const user = await getCurrentUser()
           const response = await fetch(
             `${process.env.SECONDME_API_BASE_URL}/api/secondme/chat/stream`,
             {
               method: 'POST',
               headers: {
-                Authorization: `Bearer ${user?.accessToken || ''}`,
+                Authorization: `Bearer ${user.accessToken}`,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
                 message: currentSide === 'positive'
-                  ? `请发表正方观点（话题：${debate.topic}）`
-                  : `请发表反方观点（话题：${debate.topic}）`,
+                  ? `请发表正方观点（话题：${currentDebate.topic}）`
+                  : `请发表反方观点（话题：${currentDebate.topic}）`,
                 systemPrompt: persona,
               }),
             }
           )
 
           if (!response.ok || !response.body) {
-            throw new Error('Failed to get AI response')
+            throw new Error(`AI API 响应错误: ${response.status}`)
           }
 
           let fullContent = ''
