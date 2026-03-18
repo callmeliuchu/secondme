@@ -106,6 +106,7 @@ export async function GET(
           }
 
           let fullContent = ''
+          let buffer = ''
           const reader = response.body.getReader()
           const decoder = new TextDecoder()
 
@@ -113,13 +114,39 @@ export async function GET(
             const { done, value } = await reader.read()
             if (done) break
 
-            const chunk = decoder.decode(value)
-            fullContent += chunk
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'message', side: currentSide, content: chunk })}\n\n`))
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+            buffer = lines.pop() || ''
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const eventData = line.slice(6)
+
+                // 跳过结束标记
+                if (eventData === '[DONE]') {
+                  continue
+                }
+
+                try {
+                  const data = JSON.parse(eventData)
+                  // 提取 content: {"choices": [{"delta": {"content": "xxx"}}]}
+                  const content = data.choices?.[0]?.delta?.content || data.content || ''
+
+                  if (content) {
+                    fullContent += content
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'message', side: currentSide, content })}\n\n`))
+                  }
+                } catch {
+                  // 非 JSON 数据，直接传递
+                }
+              }
+            }
           }
 
           // 保存消息到数据库
-          await addDebateMessage(id, currentSide, fullContent)
+          if (fullContent) {
+            await addDebateMessage(id, currentSide, fullContent)
+          }
 
         } catch (error) {
           console.error('AI response error:', error)

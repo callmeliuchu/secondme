@@ -19,33 +19,28 @@ export function DebatePanel({ debateId, messages: initialMessages }: DebatePanel
     content: string
   } | null>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [status, setStatus] = useState<'waiting' | 'debating' | 'ended'>('waiting')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (initialMessages) {
       setMessages(initialMessages)
     }
 
-    // 使用 fetch 获取 SSE 流
     const startStream = async () => {
       try {
         const response = await fetch(`/api/debate/${debateId}/stream`, {
           method: 'GET',
-          credentials: 'include', // 包含 cookie
+          credentials: 'include',
         })
 
-        if (!response.ok) {
+        if (!response.ok || !response.body) {
           console.error('SSE 连接失败:', response.status)
           return
         }
 
-        if (!response.body) {
-          console.error('SSE 响应体为空')
-          return
-        }
-
         setIsConnected(true)
+        setStatus('debating')
         const reader = response.body.getReader()
         const decoder = new TextDecoder()
         let buffer = ''
@@ -80,6 +75,7 @@ export function DebatePanel({ debateId, messages: initialMessages }: DebatePanel
                     ])
                     setStreamingContent(null)
                   }
+                  setStatus('ended')
                 } else if (data.type === 'persona') {
                   setMessages((prev) => [
                     ...prev,
@@ -104,40 +100,56 @@ export function DebatePanel({ debateId, messages: initialMessages }: DebatePanel
     }
 
     startStream()
-
-    return () => {
-      if (abortRef.current) {
-        abortRef.current.abort()
-      }
-    }
   }, [debateId])
 
-  // 自动滚动到底部
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingContent])
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-      {!isConnected && messages.length === 0 && (
-        <div className="flex items-center justify-center h-full text-gray-400">
-          等待辩论开始...
+    <div className="flex flex-col h-full">
+      {/* 状态栏 */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${
+            status === 'debating' ? 'bg-green-500 animate-pulse' :
+            status === 'ended' ? 'bg-gray-400' : 'bg-yellow-500'
+          }`} />
+          <span className="text-sm text-gray-600">
+            {status === 'debating' ? '辩论进行中' :
+             status === 'ended' ? '辩论已结束' : '等待开始...'}
+          </span>
         </div>
-      )}
+        <span className="text-xs text-gray-400">
+          {messages.length} 条消息
+        </span>
+      </div>
 
-      {messages.map((msg) => (
-        <DebateMessage key={msg.id} role={msg.role} content={msg.content} />
-      ))}
+      {/* 消息区域 */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.length === 0 && !streamingContent && (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            <svg className="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <p>AI 正在准备辩论...</p>
+          </div>
+        )}
 
-      {streamingContent && (
-        <DebateMessage
-          role={streamingContent.side}
-          content={streamingContent.content}
-          isStreaming
-        />
-      )}
+        {messages.map((msg) => (
+          <DebateMessage key={msg.id} role={msg.role} content={msg.content} />
+        ))}
 
-      <div ref={messagesEndRef} />
+        {streamingContent && (
+          <DebateMessage
+            role={streamingContent.side}
+            content={streamingContent.content}
+            isStreaming
+          />
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
     </div>
   )
 }
