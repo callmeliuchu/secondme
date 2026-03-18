@@ -208,6 +208,13 @@ export async function voteDebate(debateId: string, voterId: string, side: 'posit
   })
 }
 
+export async function updateDebate(id: string, data: { status?: string; positivePersona?: string; negativePersona?: string; roundCount?: number }) {
+  return prisma.debate.update({
+    where: { id },
+    data,
+  })
+}
+
 export async function endDebate(debateId: string, userId: string) {
   return prisma.debate.update({
     where: { id: debateId },
@@ -394,16 +401,21 @@ export async function GET(
       }
 
       // 开始辩论循环 - 正方先发言
-      let currentRound = debate.roundCount
+      const MAX_ROUNDS = 10 // 最大辩论轮次
+      let currentRound = debate.roundCount || 0
       let currentSide: 'positive' | 'negative' = 'positive'
 
-      while (true) {
+      while (currentRound < MAX_ROUNDS) {
         // 检查辩论是否结束
         const updatedDebate = await getDebateById(id)
         if (updatedDebate?.status === 'ended') {
           controller.enqueue(encoder.encode('data: {"type":"end"}\n\n'))
           break
         }
+
+        // 更新轮次
+        currentRound++
+        await updateDebate(id, { roundCount: currentRound })
 
         // 调用 SecondMe API 获取回复
         const persona = currentSide === 'positive' ? debate.positivePersona : debate.negativePersona
@@ -488,6 +500,7 @@ git commit -m "feat: 实现辩论相关 API 端点"
 **Files:**
 - Create: `src/components/DebateCard.tsx`
 - Create: `src/components/DebateList.tsx`
+- Create: `src/components/DebateMessage.tsx`
 - Create: `src/components/DebatePanel.tsx`
 - Create: `src/components/VotePanel.tsx`
 - Create: `src/components/CreateDebateForm.tsx`
@@ -496,6 +509,37 @@ git commit -m "feat: 实现辩论相关 API 端点"
 - [ ] **Step 1: 创建 DebateCard 组件**
 
 展示单个辩论的卡片，包含话题、状态、投票数等信息
+
+- [ ] **Step 2: 创建 DebateList 组件**
+
+辩论列表组件，包含分页
+
+- [ ] **Step 3: 创建 DebateMessage 组件**
+
+辩论消息组件，根据 role（positive/negative/user）显示不同的样式：
+- positive: 蓝色背景，右对齐
+- negative: 红色背景，左对齐
+- user: 灰色背景，右对齐
+
+```tsx
+interface DebateMessageProps {
+  role: 'positive' | 'negative' | 'user'
+  content: string
+}
+
+export function DebateMessage({ role, content }: DebateMessageProps) {
+  const styles = {
+    positive: 'bg-blue-100 ml-auto',
+    negative: 'bg-red-100',
+    user: 'bg-gray-100 ml-auto',
+  }
+  return (
+    <div className={`max-w-[70%] p-3 rounded-lg ${styles[role]}`}>
+      <p>{content}</p>
+    </div>
+  )
+}
+```
 
 - [ ] **Step 2: 创建 DebateList 组件**
 
