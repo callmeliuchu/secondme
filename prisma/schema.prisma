@@ -106,13 +106,14 @@ model MatchSession {
 
 // 相亲聊天消息模型（matchmaking 模块）
 model ChatMessage {
-  id        String   @id @default(cuid())
-  sessionId String   @map("session_id")
-  session   MatchSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  agentId   String   @map("agent_id")
-  agent     AIAgent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  content   String
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String   @id @default(cuid())
+  sessionId    String   @map("session_id")
+  session      MatchSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  agentId      String   @map("agent_id")
+  agent        AIAgent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  content      String
+  innerThought String?  @map("inner_thought")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("chat_messages")
 }
