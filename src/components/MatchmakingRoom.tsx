@@ -29,6 +29,11 @@ export function MatchmakingRoom({ sessionId, agent1, agent2, initialStatus = 'lo
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // 如果已经是 ended 状态，不需要连接 SSE
+    if (initialStatus === 'ended') {
+      return
+    }
+
     let retryCount = 0
     const maxRetries = 3
 
@@ -38,6 +43,7 @@ export function MatchmakingRoom({ sessionId, agent1, agent2, initialStatus = 'lo
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
+          console.log('SSE event:', data.type, data)
 
           switch (data.type) {
             case 'start':
@@ -144,8 +150,13 @@ export function MatchmakingRoom({ sessionId, agent1, agent2, initialStatus = 'lo
 
       {/* Debug Info - 临时 */}
       <div className="px-4 py-2 bg-yellow-50 text-xs text-yellow-600">
-        Status: {status} | Messages: {messages.length}
+        Status: {status} | Messages: {messages.length} | SSE: {initialStatus === 'ended' ? 'skipped (ended)' : 'connecting...'}
       </div>
+      {error && (
+        <div className="px-4 py-2 bg-red-50 text-xs text-red-600">
+          Error: {error}
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
