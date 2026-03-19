@@ -3,11 +3,14 @@
 import { useEffect, useState, useRef } from 'react'
 import { ChatBubble } from './ChatBubble'
 import { MatchResult } from './MatchResult'
+import { LoveHearts } from './LoveHearts'
 
 interface Message {
   agentId: string
   agentName: string
   content: string
+  innerThought?: string | null
+  matchScore?: number
 }
 
 interface MatchmakingRoomProps {
@@ -40,7 +43,12 @@ export function MatchmakingRoom({ sessionId, agent1, agent2 }: MatchmakingRoomPr
               agentId: data.agentId,
               agentName: data.agentName,
               content: data.content,
+              innerThought: data.innerThought,
+              matchScore: data.matchScore,
             }])
+            if (data.matchScore !== undefined) {
+              setMatchScore(data.matchScore)
+            }
             break
           case 'end':
             setStatus('ended')
@@ -78,30 +86,40 @@ export function MatchmakingRoom({ sessionId, agent1, agent2 }: MatchmakingRoomPr
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white font-medium text-xs">
+      <div className="flex items-center justify-center gap-4 px-4 py-4 border-b border-gray-100 bg-white">
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
             {agent1.name.charAt(0)}
           </div>
-          <span className="text-gray-400">vs</span>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center text-white font-medium text-xs">
+          <div className="text-sm mt-1">{agent1.name}</div>
+        </div>
+
+        <div className="flex flex-col items-center">
+          <LoveHearts score={matchScore} />
+          <span className="text-xs text-gray-500 mt-1">{matchScore}%</span>
+        </div>
+
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
             {agent2.name.charAt(0)}
           </div>
+          <div className="text-sm mt-1">{agent2.name}</div>
         </div>
-        <div className="flex items-center gap-2">
-          {status === 'running' && (
-            <span className="flex items-center gap-1.5 text-sm text-green-600">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              相亲中
-            </span>
-          )}
-          {status === 'loading' && (
-            <span className="flex items-center gap-1.5 text-sm text-gray-400">
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
-              等待开始
-            </span>
-          )}
-        </div>
+      </div>
+
+      <div className="absolute top-16 right-4">
+        {status === 'running' && (
+          <span className="flex items-center gap-1.5 text-sm text-green-600 bg-white px-2 py-1 rounded-full shadow-sm">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            相亲中
+          </span>
+        )}
+        {status === 'loading' && (
+          <span className="flex items-center gap-1.5 text-sm text-gray-400 bg-white px-2 py-1 rounded-full shadow-sm">
+            <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
+            等待开始
+          </span>
+        )}
       </div>
 
       {/* Error */}
@@ -132,6 +150,7 @@ export function MatchmakingRoom({ sessionId, agent1, agent2 }: MatchmakingRoomPr
               agentName={msg.agentName}
               agentId={msg.agentId}
               content={msg.content}
+              innerThought={msg.innerThought}
               isLeft={isLeft}
               avatar={isLeft ? agent1.avatar : agent2.avatar}
             />
