@@ -1,18 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
 interface LoveHeartsProps {
   score: number
 }
 
 export function LoveHearts({ score }: LoveHeartsProps) {
-  const [hearts, setHearts] = useState<boolean[]>([false, false, false, false, false])
-
-  useEffect(() => {
-    const filledCount = score < 31 ? 0 : score < 51 ? 1 : score < 71 ? 3 : score < 86 ? 5 : 5
-    setHearts([false, false, false, false, false].map((_, i) => i < filledCount))
-  }, [score])
+  const filledCount = score < 31 ? 0 : score < 51 ? 1 : score < 71 ? 3 : 5
+  const hearts = [false, false, false, false, false].map((_, i) => i < filledCount)
 
   const getHeartStyle = (index: number, filled: boolean) => {
     const base = 'text-2xl transition-all duration-300'

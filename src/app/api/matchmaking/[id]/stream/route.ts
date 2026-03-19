@@ -2,9 +2,12 @@ import { NextRequest } from 'next/server'
 import { getMatchSessionById, addChatMessage, endMatchSession, startMatchSession } from '@/lib/matchmaking'
 import { getAgentById } from '@/lib/agent'
 import { getCurrentUser } from '@/lib/auth'
+import { consumeDirectorNote } from '@/lib/director'
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
@@ -25,12 +28,13 @@ export async function GET(
     async start(controller) {
       let currentSession = session
       let currentMatchScore = 0
+      const MAX_ROUNDS = 6 // 最大聊天轮次（每方 3 次）
 
       // 如果是 pending 状态，开始相亲
       if (currentSession.status === 'pending') {
         // 发送开始信号
         controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: 'start' })}\n\n`)
+          encoder.encode(`data: ${JSON.stringify({ type: 'start', maxRounds: MAX_ROUNDS })}\n\n`)
         )
 
         // 更新状态为 running
@@ -56,7 +60,6 @@ export async function GET(
       }
 
       // 开始相亲聊天循环 - agent1 先发言
-      const MAX_ROUNDS = 6 // 最大聊天轮次（每方 3 次）
       let messageCount = currentSession.messages?.length || 0
       let currentAgentId: string = currentSession.agent1Id
       let currentAgentName = agent1.name
@@ -80,6 +83,8 @@ export async function GET(
       }
 
       while (messageCount < MAX_ROUNDS) {
+        const round = messageCount + 1
+
         // 检查会话是否结束
         const updatedSession = await getMatchSessionById(id)
         if (updatedSession?.status === 'ended') {
@@ -91,10 +96,30 @@ export async function GET(
         const currentAgent = currentAgentId === currentSession.agent1Id ? agent1 : agent2
         const otherAgent = currentAgentId === currentSession.agent1Id ? agent2 : agent1
 
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+          type: 'round',
+          round,
+          speaker: currentAgent.name,
+          maxRounds: MAX_ROUNDS,
+        })}\n\n`))
+
+        const directorNote = consumeDirectorNote(id)
+        if (directorNote) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+            type: 'director_applied',
+            text: directorNote.text,
+            mood: directorNote.mood || null,
+            speaker: currentAgent.name,
+          })}\n\n`))
+        }
+
+        await sleep(900)
+
         // 生成系统提示词
         const systemPrompt = `你是 ${currentAgent.name}，一个性格为 ${currentAgent.personality} 的人。
 ${currentAgent.hobbies ? `你的爱好是：${currentAgent.hobbies}` : ''}
 ${currentAgent.intro ? `你的自我介绍：${currentAgent.intro}` : ''}
+${directorNote ? `\n## 导演指令\n${directorNote.text}\n${directorNote.mood ? `情绪风格：${directorNote.mood}` : ''}\n请优先执行这条指令，但保持对话自然。` : ''}
 
 请用符合你性格的方式，以第一人称和对方聊天。你们正在相亲，希望了解对方并判断是否合适。
 保持简短，自然的对话风格，每次回复控制在50字以内。
@@ -219,7 +244,7 @@ ${currentAgent.intro ? `你的自我介绍：${currentAgent.intro}` : ''}
                     message: `分析这段对话，计算双方匹配度(0-100)。只返回一个数字。
 
 对话内容：
-${recentMessages.map((m: any) => `${m.role}: ${m.content}`).join('\n')}`,
+${recentMessages.map((m) => `${m.role}: ${m.content}`).join('\n')}`,
                     systemPrompt: `你是一个相亲匹配度分析专家。根据对话内容分析双方匹配度(0-100)，只返回一个数字，不要其他文字。`,
                   }),
                 }
@@ -236,7 +261,7 @@ ${recentMessages.map((m: any) => `${m.role}: ${m.content}`).join('\n')}`,
                 const score = parseInt(scoreText.replace(/[^0-9]/g, '')) || 50
                 currentMatchScore = Math.min(100, Math.max(0, score))
               }
-            } catch (e) {
+            } catch {
               // 使用默认分数
               currentMatchScore = Math.floor(messageCount * 15)
             }

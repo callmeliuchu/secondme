@@ -17,13 +17,15 @@ interface AgentCardProps {
 export function AgentCard({ agent, onSelect, onDelete, selected }: AgentCardProps) {
   return (
     <div
-      className={`bg-white rounded-xl shadow-sm border p-4 hover:shadow-md transition-all cursor-pointer group ${
-        selected ? 'border-pink-500 ring-2 ring-pink-100' : 'border-gray-200 hover:border-gray-300'
+      className={`rounded-2xl border p-4 transition-all cursor-pointer group backdrop-blur-xl ${
+        selected
+          ? 'border-cyan-300/80 bg-cyan-400/15 ring-2 ring-cyan-200/30'
+          : 'border-white/15 bg-white/10 hover:border-fuchsia-200/40 hover:bg-white/15'
       }`}
       onClick={onSelect}
     >
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-fuchsia-500 flex items-center justify-center text-slate-950 font-bold text-lg flex-shrink-0">
           {agent.avatar ? (
             <img src={agent.avatar} alt={agent.name} className="w-full h-full rounded-full object-cover" />
           ) : (
@@ -31,10 +33,10 @@ export function AgentCard({ agent, onSelect, onDelete, selected }: AgentCardProp
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-gray-900 group-hover:text-pink-600 transition-colors">
+          <h3 className="font-medium text-white group-hover:text-cyan-200 transition-colors">
             {agent.name}
           </h3>
-          <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">
+          <p className="text-sm text-white/70 mt-0.5 line-clamp-1">
             {agent.personality}
           </p>
         </div>
@@ -44,7 +46,7 @@ export function AgentCard({ agent, onSelect, onDelete, selected }: AgentCardProp
               e.stopPropagation()
               onDelete()
             }}
-            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+            className="p-1.5 text-white/45 hover:text-rose-300 hover:bg-rose-500/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -55,17 +57,17 @@ export function AgentCard({ agent, onSelect, onDelete, selected }: AgentCardProp
 
       {agent.hobbies && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          <span className="px-2 py-0.5 bg-pink-50 text-pink-600 text-xs rounded-full">
+          <span className="px-2 py-0.5 bg-white/12 border border-white/20 text-cyan-100 text-xs rounded-full">
             {agent.hobbies}
           </span>
         </div>
       )}
 
       {selected !== undefined && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
+        <div className="mt-3 pt-3 border-t border-white/12">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-400">状态</span>
-            <span className={`font-medium ${agent.status === 'active' ? 'text-green-600' : 'text-gray-400'}`}>
+            <span className="text-white/55">状态</span>
+            <span className={`font-medium ${agent.status === 'active' ? 'text-emerald-300' : 'text-white/45'}`}>
               {agent.status === 'active' ? '✓ 可用' : '已停用'}
             </span>
           </div>

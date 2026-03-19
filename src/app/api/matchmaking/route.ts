@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
-import { getRandomPlatformAgent, getUserAgents } from '@/lib/agent'
+import { getPlatformAgents, getRandomPlatformAgent, getUserAgents } from '@/lib/agent'
 import { createMatchSession } from '@/lib/matchmaking'
 
 export async function POST(request: NextRequest) {
@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ code: 401, message: '请先登录' }, { status: 401 })
   }
 
-  const { agentId, matchType = 'platform', selfMatchAgentId } = await request.json()
+  const { agentId, matchType = 'platform', selfMatchAgentId, platformAgentId } = await request.json()
 
   if (!agentId) {
     return NextResponse.json({ code: 400, message: '请选择分身' }, { status: 400 })
@@ -40,8 +40,18 @@ export async function POST(request: NextRequest) {
     }
     matchedAgentId = selfMatchAgentId
   } else {
-    // 平台角色匹配：随机选择一个平台角色
-    const platformAgent = await getRandomPlatformAgent()
+    // 平台角色匹配：支持手动选角，否则随机
+    let platformAgent = null
+    if (platformAgentId) {
+      const platformAgents = await getPlatformAgents()
+      platformAgent = platformAgents.find((agent) => agent.id === platformAgentId) || null
+      if (!platformAgent) {
+        return NextResponse.json({ code: 400, message: '无效的平台角色' }, { status: 400 })
+      }
+    } else {
+      platformAgent = await getRandomPlatformAgent()
+    }
+
     if (!platformAgent) {
       return NextResponse.json({ code: 404, message: '暂无可用的平台角色，请稍后再试' }, { status: 404 })
     }

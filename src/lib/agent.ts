@@ -79,10 +79,11 @@ export async function getPlatformAgents(): Promise<AIAgent[]> {
 export async function getRandomPlatformAgent(): Promise<AIAgent | null> {
   const agents = await prisma.aIAgent.findMany({
     where: { isPlatform: true, status: 'active' },
-    take: 1,
     orderBy: { createdAt: 'asc' },
   })
-  return agents[0] || null
+  if (!agents.length) return null
+  const index = Math.floor(Math.random() * agents.length)
+  return agents[index]
 }
 
 export async function getRandomSelfMatchAgent(userId: string, excludeAgentId: string): Promise<AIAgent | null> {

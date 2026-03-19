@@ -25,12 +25,12 @@ export function AgentList({ agents, selectedAgentId, onSelect, onDelete, emptyTe
   if (agents.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+          <svg className="w-8 h-8 text-cyan-200/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         </div>
-        <p className="text-gray-500">{emptyText || '暂无分身'}</p>
+        <p className="text-white/70">{emptyText || '暂无分身'}</p>
       </div>
     )
   }

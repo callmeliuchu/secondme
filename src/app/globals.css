@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #060714;
+  --foreground: #f4f6ff;
   --font-noto-sans-sc: "Noto Sans SC", sans-serif;
 }
 
@@ -18,6 +18,86 @@ body {
   font-family: var(--font-noto-sans-sc), ui-sans-serif, system-ui, sans-serif;
 }
 
+.neo-mesh {
+  background:
+    radial-gradient(circle at 8% 12%, rgba(34, 211, 238, 0.22), transparent 38%),
+    radial-gradient(circle at 86% 8%, rgba(244, 114, 182, 0.24), transparent 40%),
+    radial-gradient(circle at 65% 78%, rgba(250, 204, 21, 0.16), transparent 38%),
+    linear-gradient(130deg, #05070f 0%, #0d1431 45%, #1a0f31 100%);
+}
+
+.neo-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 34px 34px;
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.neo-glass {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.07));
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 14px 42px rgba(2, 6, 23, 0.3);
+  backdrop-filter: blur(14px);
+}
+
+.neo-card {
+  background: linear-gradient(150deg, rgba(9, 13, 32, 0.7), rgba(19, 26, 53, 0.65));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 42px rgba(4, 7, 21, 0.38);
+  backdrop-filter: blur(8px);
+}
+
+.neo-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.neo-button {
+  border-radius: 12px;
+  background: linear-gradient(92deg, #22d3ee 0%, #a78bfa 48%, #f472b6 100%);
+  color: #0a1026;
+  font-weight: 700;
+  box-shadow: 0 12px 28px rgba(167, 139, 250, 0.38);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.neo-button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: 0 16px 34px rgba(56, 189, 248, 0.35);
+}
+
+.neo-button:disabled {
+  filter: grayscale(0.2);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@keyframes corridor-move {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 0 48px, 56px 0;
+  }
+}
+
+.corridor-floor {
+  background-image:
+    linear-gradient(to top, rgba(255, 255, 255, 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+  background-size: 24px 24px, 28px 28px;
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 1), transparent 86%);
+  animation: corridor-move 2.2s linear infinite;
+}
+
 @keyframes fade-in-right {
   from {
     opacity: 0;
@@ -31,4 +111,19 @@ body {
 
 .animate-fade-in-right {
   animation: fade-in-right 0.3s ease-out forwards;
+}
+
+@keyframes cinema-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cinema-fade-in {
+  animation: cinema-fade-in 0.35s ease-out forwards;
 }

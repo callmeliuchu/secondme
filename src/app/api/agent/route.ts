@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { createAgent, getUserAgents } from '@/lib/agent'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const user = await getCurrentUser()
   if (!user) {
     return NextResponse.json({ code: 401, message: '请先登录' }, { status: 401 })

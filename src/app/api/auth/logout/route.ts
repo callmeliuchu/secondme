@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
-export async function POST() {
-  const response = NextResponse.json({ success: true })
+export async function POST(request: Request) {
+  const response = NextResponse.redirect(new URL('/logged-out', request.url), 303)
 
   // 清除登录 cookie
   response.cookies.set('user_id', '', {

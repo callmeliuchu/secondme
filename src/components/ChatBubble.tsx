@@ -1,13 +1,12 @@
 interface ChatBubbleProps {
   agentName: string
-  agentId: string
   content: string
   innerThought?: string | null
   isLeft: boolean
   avatar?: string | null
 }
 
-export function ChatBubble({ agentName, agentId, content, innerThought, isLeft, avatar }: ChatBubbleProps) {
+export function ChatBubble({ agentName, content, innerThought, isLeft, avatar }: ChatBubbleProps) {
   return (
     <div className={`flex gap-3 ${isLeft ? '' : 'flex-row-reverse'}`}>
       <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white font-medium text-sm ${
