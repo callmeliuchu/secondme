@@ -223,7 +223,19 @@ ${recentMessages.map((m: any) => `${m.agentId === currentSession.agent1Id ? agen
 
         } catch (error) {
           console.error('AI response error:', error)
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'AI 响应出错' })}\n\n`))
+          // 发生错误时，发送一个默认消息而不是直接结束
+          const errorMessage = `（内心独白：这个人好像不太想说话...）`
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+            type: 'message',
+            agentId: currentAgentId,
+            agentName: currentAgentName,
+            content: '抱歉，我现在有点走神...',
+            innerThought: errorMessage,
+            matchScore: currentMatchScore
+          })}\n\n`))
+          // 保存错误消息
+          await addChatMessage(id, currentAgentId, '抱歉，我现在有点走神...', errorMessage)
+          messageCount++
         }
 
         // 切换到另一方
