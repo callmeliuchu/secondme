@@ -7,6 +7,10 @@ export type MatchSessionWithRelations = MatchSession & {
   messages: ChatMessage[]
 }
 
+export type ChatMessageWithInner = ChatMessage & {
+  innerThought?: string | null
+}
+
 export async function createMatchSession(
   userId: string,
   agent1Id: string,
@@ -36,10 +40,11 @@ export async function getMatchSessionById(id: string): Promise<MatchSessionWithR
 export async function addChatMessage(
   sessionId: string,
   agentId: string,
-  content: string
+  content: string,
+  innerThought?: string
 ): Promise<ChatMessage> {
   return prisma.chatMessage.create({
-    data: { sessionId, agentId, content },
+    data: { sessionId, agentId, content, innerThought },
   })
 }
 
