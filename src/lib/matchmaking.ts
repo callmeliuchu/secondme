@@ -59,6 +59,15 @@ export async function endMatchSession(id: string, matchScore: number): Promise<M
   })
 }
 
+export async function startMatchSession(id: string): Promise<MatchSession> {
+  return prisma.matchSession.update({
+    where: { id },
+    data: {
+      status: 'running',
+    },
+  })
+}
+
 export async function getUserMatchSessions(userId: string, limit = 10): Promise<MatchSession[]> {
   return prisma.matchSession.findMany({
     where: { userId },

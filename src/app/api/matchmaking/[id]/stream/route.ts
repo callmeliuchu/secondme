@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { getMatchSessionById, addChatMessage, endMatchSession } from '@/lib/matchmaking'
+import { getMatchSessionById, addChatMessage, endMatchSession, startMatchSession } from '@/lib/matchmaking'
 import { getAgentById } from '@/lib/agent'
 import { getCurrentUser } from '@/lib/auth'
 
@@ -34,7 +34,7 @@ export async function GET(
         )
 
         // 更新状态为 running
-        await endMatchSession(id, 0) // 先设置为 0，稍后计算匹配度
+        await startMatchSession(id)
         currentSession = await getMatchSessionById(id) || currentSession
       }
 
