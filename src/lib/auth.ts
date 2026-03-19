@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers'
+import { prisma } from './prisma'
 
 // 获取当前登录用户
 export async function getCurrentUser() {
@@ -7,7 +8,6 @@ export async function getCurrentUser() {
 
   if (!userId) return null
 
-  const { prisma } = await import('./prisma')
   const user = await prisma.user.findUnique({
     where: { id: userId },
   })
