@@ -29,10 +29,9 @@ model User {
   // 会话（chat 模块）
   sessions        Session[]
 
-  // 辩论（debate 模块）
-  debates         Debate[]
-  debateComments  DebateComment[]
-  debateParticipations DebateParticipant[]
+  // AI 分身（matchmaking 模块）
+  aiAgents        AIAgent[]
+  matchSessions   MatchSession[]
 
   @@map("users")
 }
@@ -64,78 +63,56 @@ model Message {
   @@map("messages")
 }
 
-// 辩论模型（debate 模块）
-model Debate {
-  id              String    @id @default(cuid())
-  topic           String
-  status          String    @default("pending") // pending/running/ended
-  positivePersona String    @map("positive_persona")
-  negativePersona String    @map("negative_persona")
-  createdBy       String    @map("created_by")
-  creator         User      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-  roundCount      Int       @default(0) @map("round_count")
-  endedAt         DateTime? @map("ended_at")
-  endedBy         String?   @map("ended_by")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+// AI 分身模型（matchmaking 模块）
+model AIAgent {
+  id          String   @id @default(cuid())
+  userId      String?  @map("user_id")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  personality String
+  hobbies     String?
+  appearance  String?
+  intro       String?
+  avatar      String?
+  status      String   @default("active")
+  isPlatform  Boolean  @default(false) @map("is_platform")
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  messages      DebateMessage[]
-  votes        DebateVote[]
-  comments     DebateComment[]
-  participants DebateParticipant[]
+  sessionsAsAgent1 MatchSession[] @relation("Agent1")
+  sessionsAsAgent2 MatchSession[] @relation("Agent2")
+  messages         ChatMessage[]
 
-  @@map("debates")
+  @@map("ai_agents")
 }
 
-// 辩论消息模型（debate 模块）
-model DebateMessage {
-  id         String   @id @default(cuid())
-  debateId   String   @map("debate_id")
-  debate     Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
-  role       String   // positive/negative/user
-  content    String
-  tokensUsed Int?     @map("tokens_used")
-  createdAt  DateTime @default(now()) @map("created_at")
+// 相亲会话模型（matchmaking 模块）
+model MatchSession {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent1Id   String    @map("agent1_id")
+  agent1     AIAgent   @relation("Agent1", fields: [agent1Id], references: [id])
+  agent2Id   String    @map("agent2_id")
+  agent2     AIAgent   @relation("Agent2", fields: [agent2Id], references: [id])
+  status     String    @default("pending") // pending/running/ended
+  matchScore Int?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  endedAt    DateTime? @map("ended_at")
 
-  @@map("debate_messages")
+  messages ChatMessage[]
+
+  @@map("match_sessions")
 }
 
-// 辩论投票模型（debate 模块）
-model DebateVote {
+// 相亲聊天消息模型（matchmaking 模块）
+model ChatMessage {
   id        String   @id @default(cuid())
-  debateId  String   @map("debate_id")
-  debate    Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
-  voterId   String   @map("voter_id")
-  side      String   // positive/negative
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@unique([debateId, voterId])
-  @@map("debate_votes")
-}
-
-// 辩论评论模型（debate 模块）
-model DebateComment {
-  id        String   @id @default(cuid())
-  debateId  String   @map("debate_id")
-  debate    Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String   @map("session_id")
+  session   MatchSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  agentId   String   @map("agent_id")
+  agent     AIAgent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
   content   String
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@map("debate_comments")
-}
-
-// 辩论参与者模型（debate 模块）
-model DebateParticipant {
-  id        String   @id @default(cuid())
-  debateId  String   @map("debate_id")
-  debate    Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      String   @default("audience")
-  joinedAt  DateTime @default(now()) @map("joined_at")
-
-  @@unique([debateId, userId])
-  @@map("debate_participants")
+  @@map("chat_messages")
 }
