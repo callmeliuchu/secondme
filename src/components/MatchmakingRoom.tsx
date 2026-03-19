@@ -22,6 +22,7 @@ interface MatchmakingRoomProps {
 }
 
 export function MatchmakingRoom({ sessionId, agent1, agent2, initialStatus = 'loading', initialMessages = [] }: MatchmakingRoomProps) {
+  console.log('MatchmakingRoom props:', { sessionId, agent1, agent2, initialStatus, initialMessagesCount: initialMessages.length })
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [status, setStatus] = useState<'loading' | 'running' | 'ended'>(initialStatus)
   const [matchScore, setMatchScore] = useState(0)

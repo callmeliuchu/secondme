@@ -8,7 +8,10 @@ async function getSession(sessionId: string) {
   const cookieStore = await cookies()
   const userId = cookieStore.get('user_id')?.value
 
-  if (!userId) return null
+  if (!userId) {
+    console.log('No user_id cookie found')
+    return null
+  }
 
   const session = await prisma.matchSession.findUnique({
     where: { id: sessionId },
@@ -19,6 +22,7 @@ async function getSession(sessionId: string) {
     },
   })
 
+  console.log('Session found:', sessionId, 'status:', session?.status, 'messages:', session?.messages?.length)
   return session
 }
 
