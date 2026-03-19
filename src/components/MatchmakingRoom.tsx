@@ -98,7 +98,7 @@ export function MatchmakingRoom({ sessionId, agent1, agent2 }: MatchmakingRoomPr
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Header */}
       <div className="flex items-center justify-center gap-4 px-4 py-4 border-b border-gray-100 bg-white">
         <div className="text-center">
@@ -121,7 +121,8 @@ export function MatchmakingRoom({ sessionId, agent1, agent2 }: MatchmakingRoomPr
         </div>
       </div>
 
-      <div className="absolute top-16 right-4">
+      {/* Status Badge */}
+      <div className="absolute top-4 right-4 z-10">
         {status === 'running' && (
           <span className="flex items-center gap-1.5 text-sm text-green-600 bg-white px-2 py-1 rounded-full shadow-sm">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
@@ -143,9 +144,14 @@ export function MatchmakingRoom({ sessionId, agent1, agent2 }: MatchmakingRoomPr
         </div>
       )}
 
+      {/* Debug Info - 临时 */}
+      <div className="px-4 py-2 bg-yellow-50 text-xs text-yellow-600">
+        Status: {status} | Messages: {messages.length}
+      </div>
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && status === 'running' && (
+        {messages.length === 0 && (status === 'loading' || status === 'running') && (
           <div className="text-center py-8">
             <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-pink-50 flex items-center justify-center">
               <svg className="w-6 h-6 text-pink-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
