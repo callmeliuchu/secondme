@@ -6,9 +6,9 @@ import { MatchmakingRoom } from '@/components/MatchmakingRoom'
 
 async function getSession(sessionId: string) {
   const cookieStore = await cookies()
-  const secondmeUserId = cookieStore.get('secondme_user_id')?.value
+  const userId = cookieStore.get('user_id')?.value
 
-  if (!secondmeUserId) return null
+  if (!userId) return null
 
   const session = await prisma.matchSession.findUnique({
     where: { id: sessionId },
