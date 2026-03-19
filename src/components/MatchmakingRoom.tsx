@@ -17,11 +17,13 @@ interface MatchmakingRoomProps {
   sessionId: string
   agent1: { id: string; name: string; avatar?: string | null }
   agent2: { id: string; name: string; avatar?: string | null }
+  initialStatus?: 'loading' | 'running' | 'ended'
+  initialMessages?: Message[]
 }
 
-export function MatchmakingRoom({ sessionId, agent1, agent2 }: MatchmakingRoomProps) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [status, setStatus] = useState<'loading' | 'running' | 'ended'>('loading')
+export function MatchmakingRoom({ sessionId, agent1, agent2, initialStatus = 'loading', initialMessages = [] }: MatchmakingRoomProps) {
+  const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [status, setStatus] = useState<'loading' | 'running' | 'ended'>(initialStatus)
   const [matchScore, setMatchScore] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -92,10 +94,6 @@ export function MatchmakingRoom({ sessionId, agent1, agent2 }: MatchmakingRoomPr
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
-
-  if (status === 'ended') {
-    return <MatchResult matchScore={matchScore} agent1Name={agent1.name} agent2Name={agent2.name} />
-  }
 
   return (
     <div className="flex flex-col h-full relative">
@@ -178,6 +176,13 @@ export function MatchmakingRoom({ sessionId, agent1, agent2 }: MatchmakingRoomPr
         })}
 
         <div ref={messagesEndRef} />
+
+        {/* 会话结束时显示结果 */}
+        {status === 'ended' && (
+          <div className="mt-4">
+            <MatchResult matchScore={matchScore} agent1Name={agent1.name} agent2Name={agent2.name} />
+          </div>
+        )}
       </div>
     </div>
   )

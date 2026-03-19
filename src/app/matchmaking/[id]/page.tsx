@@ -15,6 +15,7 @@ async function getSession(sessionId: string) {
     include: {
       agent1: { select: { id: true, name: true, avatar: true } },
       agent2: { select: { id: true, name: true, avatar: true } },
+      messages: { orderBy: { createdAt: 'asc' } },
     },
   })
 
@@ -68,6 +69,13 @@ export default async function MatchRoomPage({
             sessionId={session.id}
             agent1={session.agent1}
             agent2={session.agent2}
+            initialStatus={session.status as 'loading' | 'running' | 'ended'}
+            initialMessages={session.messages.map(m => ({
+              agentId: m.agentId,
+              agentName: m.agentId === session.agent1.id ? session.agent1.name : session.agent2.name,
+              content: m.content,
+              innerThought: m.innerThought || null,
+            }))}
           />
         </div>
       </main>
