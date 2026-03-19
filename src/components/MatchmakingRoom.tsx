@@ -27,51 +27,65 @@ export function MatchmakingRoom({ sessionId, agent1, agent2 }: MatchmakingRoomPr
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const eventSource = new EventSource(`/api/matchmaking/${sessionId}/stream`)
+    let retryCount = 0
+    const maxRetries = 3
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
+    const connect = () => {
+      const eventSource = new EventSource(`/api/matchmaking/${sessionId}/stream`)
 
-        switch (data.type) {
-          case 'start':
-            setStatus('running')
-            setError(null)
-            break
-          case 'message':
-            setMessages((prev) => [...prev, {
-              agentId: data.agentId,
-              agentName: data.agentName,
-              content: data.content,
-              innerThought: data.innerThought,
-              matchScore: data.matchScore,
-            }])
-            if (data.matchScore !== undefined) {
-              setMatchScore(data.matchScore)
-            }
-            break
-          case 'end':
-            setStatus('ended')
-            setMatchScore(data.matchScore || 0)
-            eventSource.close()
-            break
-          case 'error':
-            setError(data.message)
-            eventSource.close()
-            break
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+
+          switch (data.type) {
+            case 'start':
+              setStatus('running')
+              setError(null)
+              retryCount = 0
+              break
+            case 'message':
+              setMessages((prev) => [...prev, {
+                agentId: data.agentId,
+                agentName: data.agentName,
+                content: data.content,
+                innerThought: data.innerThought,
+                matchScore: data.matchScore,
+              }])
+              if (data.matchScore !== undefined) {
+                setMatchScore(data.matchScore)
+              }
+              break
+            case 'end':
+              setStatus('ended')
+              setMatchScore(data.matchScore || 0)
+              eventSource.close()
+              break
+            case 'error':
+              setError(data.message)
+              eventSource.close()
+              break
+          }
+        } catch (e) {
+          console.error('Failed to parse SSE data:', e)
         }
-      } catch (e) {
-        console.error('Failed to parse SSE data:', e)
+      }
+
+      eventSource.onerror = () => {
+        if (retryCount < maxRetries) {
+          retryCount++
+          eventSource.close()
+          setTimeout(connect, 1000 * retryCount)
+        } else {
+          setError('连接失败，请刷新页面重试')
+          eventSource.close()
+        }
       }
     }
 
-    eventSource.onerror = () => {
-      setError('连接中断')
-      eventSource.close()
-    }
+    connect()
 
     return () => {
-      eventSource.close()
+      // Cleanup handled in onerror/close
     }
   }, [sessionId])
 
