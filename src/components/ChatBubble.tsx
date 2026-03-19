@@ -2,11 +2,12 @@ interface ChatBubbleProps {
   agentName: string
   agentId: string
   content: string
+  innerThought?: string | null
   isLeft: boolean
   avatar?: string | null
 }
 
-export function ChatBubble({ agentName, agentId, content, isLeft, avatar }: ChatBubbleProps) {
+export function ChatBubble({ agentName, agentId, content, innerThought, isLeft, avatar }: ChatBubbleProps) {
   return (
     <div className={`flex gap-3 ${isLeft ? '' : 'flex-row-reverse'}`}>
       <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white font-medium text-sm ${
@@ -27,6 +28,14 @@ export function ChatBubble({ agentName, agentId, content, isLeft, avatar }: Chat
         }`}>
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
         </div>
+        {innerThought && (
+          <div className={`mt-2 ${isLeft ? 'ml-4' : 'mr-4'} animate-fade-in-right`}>
+            <div className="inline-flex items-center gap-2 px-3 py-2 bg-purple-50/80 border border-dashed border-purple-300 rounded-lg text-sm italic text-purple-600 max-w-xs">
+              <span>💭</span>
+              <span>{innerThought}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
