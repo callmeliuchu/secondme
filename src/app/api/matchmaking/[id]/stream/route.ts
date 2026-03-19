@@ -61,13 +61,22 @@ export async function GET(
       let currentAgentId: string = currentSession.agent1Id
       let currentAgentName = agent1.name
 
-      // 如果已经有消息，下一方应该是最后一条消息的对方
+      // 构建对话历史
+      const conversationHistory: { role: string; content: string }[] = []
+
+      // 如果已经有消息，恢复对话历史
       if (messageCount > 0) {
         const lastMessage = currentSession.messages[messageCount - 1]
         currentAgentId = lastMessage.agentId === currentSession.agent1Id
           ? currentSession.agent2Id
           : currentSession.agent1Id
         currentAgentName = currentAgentId === currentSession.agent1Id ? agent1.name : agent2.name
+
+        // 恢复历史对话
+        for (const msg of currentSession.messages) {
+          const agentName = msg.agentId === currentSession.agent1Id ? agent1.name : agent2.name
+          conversationHistory.push({ role: agentName, content: msg.content })
+        }
       }
 
       while (messageCount < MAX_ROUNDS) {
@@ -100,6 +109,17 @@ ${currentAgent.intro ? `你的自我介绍：${currentAgent.intro}` : ''}
 （你的内心独白，暗戳戳的想法，如对对方的好感、疑虑、吐槽等，要真实有趣）`
 
         try {
+          // 构建发送给 AI 的消息（包含对话历史）
+          let userMessage = ''
+          if (conversationHistory.length === 0) {
+            // 第一轮对话
+            userMessage = `你好，我是 ${otherAgent.name}。${otherAgent.hobbies ? `听说你喜欢${otherAgent.hobbies}，是真的吗？` : '很高兴认识你！'}`
+          } else {
+            // 后续对话，发送历史
+            const historyText = conversationHistory.map(h => `${h.role}: ${h.content}`).join('\n')
+            userMessage = `对话历史：\n${historyText}\n\n现在请你（${currentAgent.name}）继续回复对方。记住要结合之前的对话内容，保持对话的连贯性。`
+          }
+
           const response = await fetch(
             `${process.env.SECONDME_API_BASE_URL}/api/secondme/chat/stream`,
             {
@@ -109,7 +129,7 @@ ${currentAgent.intro ? `你的自我介绍：${currentAgent.intro}` : ''}
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                message: `你好，我是 ${otherAgent.name}。${otherAgent.hobbies ? `听说你喜欢${otherAgent.hobbies}，是真的吗？` : '很高兴认识你！'}`,
+                message: userMessage,
                 systemPrompt,
               }),
             }
@@ -178,10 +198,11 @@ ${currentAgent.intro ? `你的自我介绍：${currentAgent.intro}` : ''}
           if (surfaceContent) {
             await addChatMessage(id, currentAgentId, surfaceContent, innerThought || undefined)
             messageCount++
+            // 添加到对话历史
+            conversationHistory.push({ role: currentAgentName, content: surfaceContent })
           }
 
           // 构建对话历史，计算匹配度
-          const conversationHistory = currentSession.messages || []
           const recentMessages = conversationHistory.slice(-6)
 
           if (recentMessages.length >= 2) {
@@ -198,7 +219,7 @@ ${currentAgent.intro ? `你的自我介绍：${currentAgent.intro}` : ''}
                     message: `分析这段对话，计算双方匹配度(0-100)。只返回一个数字。
 
 对话内容：
-${recentMessages.map((m: any) => `${m.agentId === currentSession.agent1Id ? agent1.name : agent2.name}: ${m.content}`).join('\n')}`,
+${recentMessages.map((m: any) => `${m.role}: ${m.content}`).join('\n')}`,
                     systemPrompt: `你是一个相亲匹配度分析专家。根据对话内容分析双方匹配度(0-100)，只返回一个数字，不要其他文字。`,
                   }),
                 }
